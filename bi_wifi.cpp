@@ -238,14 +238,7 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
     
     if (!provisioned) {
         ESP_LOGI(TAG, "Starting provisioning with SoftAP");
-        
-        // Configure SoftAP
-        wifi_prov_mgr_config_t   config = {
-            .scheme = wifi_prov_scheme_softap,
-            .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
-        };
-            
-        
+               
         // Start provisioning
         wifi_prov_security_t security_mode = security == 0 ? 
                                           WIFI_PROV_SECURITY_0 : WIFI_PROV_SECURITY_1;
