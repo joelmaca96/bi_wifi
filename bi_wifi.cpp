@@ -48,7 +48,7 @@ WiFiManager::~WiFiManager() {
 
 bool WiFiManager::init() {
     if (initialized_) {
-        ESP_LOGI(TAG, "WiFi manager already initialized");
+        ESP_LOGD(TAG, "WiFi manager already initialized");
         return true;
     }
     
@@ -67,7 +67,7 @@ bool WiFiManager::init() {
     initialized_ = true;
     updateState(WiFiState::DISCONNECTED);
     
-    ESP_LOGI(TAG, "WiFi manager initialized successfully");
+    ESP_LOGD(TAG, "WiFi manager initialized successfully");
     return true;
 }
 
@@ -134,10 +134,10 @@ bool WiFiManager::connect() {
     
     std::string ssid, password;
     if (loadCredentials(ssid, password)) {
-        ESP_LOGI(TAG, "Found stored credentials, connecting to %s", ssid.c_str());
+        ESP_LOGD(TAG, "Found stored credentials, connecting to %s", ssid.c_str());
         return connect(ssid, password, false);
     } else {
-        ESP_LOGI(TAG, "No stored credentials found, starting provisioning");
+        ESP_LOGD(TAG, "No stored credentials found, starting provisioning");
         
         // Generate a unique AP name based on MAC address
         uint8_t mac[6];
@@ -156,7 +156,7 @@ bool WiFiManager::connect(const std::string& ssid, const std::string& password, 
     }
     
     if (state_ == WiFiState::CONNECTING || state_ == WiFiState::CONNECTED) {
-        ESP_LOGI(TAG, "Already connecting or connected, disconnecting first");
+        ESP_LOGD(TAG, "Already connecting or connected, disconnecting first");
         disconnect();
     }
     
@@ -182,7 +182,7 @@ bool WiFiManager::connect(const std::string& ssid, const std::string& password, 
     current_ssid_ = ssid;
     current_password_ = password;
     
-    ESP_LOGI(TAG, "Connecting to %s...", ssid.c_str());
+    ESP_LOGD(TAG, "Connecting to %s...", ssid.c_str());
     return true;
 }
 
@@ -199,7 +199,7 @@ bool WiFiManager::disconnect() {
     }
     
     updateState(WiFiState::DISCONNECTED);
-    ESP_LOGI(TAG, "Disconnected from WiFi");
+    ESP_LOGD(TAG, "Disconnected from WiFi");
     return true;
 }
 
@@ -212,7 +212,7 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
     
     // If already provisioning, do nothing
     if (provisioning_active_) {
-        ESP_LOGI(TAG, "Provisioning already active");
+        ESP_LOGD(TAG, "Provisioning already active");
         return true;
     }
     
@@ -237,7 +237,7 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
     
     if (!provisioned) {
-        ESP_LOGI(TAG, "Starting provisioning with SoftAP");
+        ESP_LOGD(TAG, "Starting provisioning with SoftAP");
                
         // Start provisioning
         wifi_prov_security_t security_mode = security == 0 ? 
@@ -253,18 +253,18 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
         updateState(WiFiState::PROVISIONING);
         provisioning_active_ = true;
         
-        ESP_LOGI(TAG, "Provisioning started with SoftAP SSID: %s", ap_ssid.c_str());
+        ESP_LOGD(TAG, "Provisioning started with SoftAP SSID: %s", ap_ssid.c_str());
         if (!ap_password.empty()) {
-            ESP_LOGI(TAG, "SoftAP Password: %s", ap_password.c_str());
+            ESP_LOGD(TAG, "SoftAP Password: %s", ap_password.c_str());
         } else {
-            ESP_LOGI(TAG, "SoftAP is open (no password)");
+            ESP_LOGD(TAG, "SoftAP is open (no password)");
         }
         
         if (security != 0) {
-            ESP_LOGI(TAG, "Proof of Possession (PoP): %s", pop.c_str());
+            ESP_LOGD(TAG, "Proof of Possession (PoP): %s", pop.c_str());
         }
     } else {
-        ESP_LOGI(TAG, "Already provisioned, connecting to WiFi");
+        ESP_LOGD(TAG, "Already provisioned, connecting to WiFi");
         wifi_prov_mgr_deinit();
         return connect();
     }
@@ -274,7 +274,7 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
 
 bool WiFiManager::stopProvisioning() {
     if (!provisioning_active_) {
-        ESP_LOGI(TAG, "Provisioning not active");
+        ESP_LOGD(TAG, "Provisioning not active");
         return true;
     }
     
@@ -283,7 +283,7 @@ bool WiFiManager::stopProvisioning() {
     provisioning_active_ = false;
     updateState(WiFiState::DISCONNECTED);
     
-    ESP_LOGI(TAG, "Provisioning stopped");
+    ESP_LOGD(TAG, "Provisioning stopped");
     return true;
 }
 
@@ -327,7 +327,7 @@ bool WiFiManager::clearStoredCredentials() {
     }
     
     nvs_close(nvs_handle);
-    ESP_LOGI(TAG, "WiFi credentials cleared from NVS");
+    ESP_LOGD(TAG, "WiFi credentials cleared from NVS");
     return true;
 }
 
@@ -387,7 +387,7 @@ bool WiFiManager::saveCredentials(const std::string& ssid, const std::string& pa
     }
     
     nvs_close(nvs_handle);
-    ESP_LOGI(TAG, "WiFi credentials saved to NVS");
+    ESP_LOGD(TAG, "WiFi credentials saved to NVS");
     return true;
 }
 
@@ -395,14 +395,14 @@ bool WiFiManager::loadCredentials(std::string& ssid, std::string& password) {
     nvs_handle_t nvs_handle;
     esp_err_t err = nvs_open(nvs_namespace_.c_str(), NVS_READONLY, &nvs_handle);
     if (err != ESP_OK) {
-        ESP_LOGI(TAG, "Error opening NVS handle: %s", esp_err_to_name(err));
+        ESP_LOGD(TAG, "Error opening NVS handle: %s", esp_err_to_name(err));
         return false;
     }
     
     size_t ssid_len = 0;
     err = nvs_get_str(nvs_handle, NVS_KEY_SSID, NULL, &ssid_len);
     if (err != ESP_OK) {
-        ESP_LOGI(TAG, "SSID not found in NVS");
+        ESP_LOGD(TAG, "SSID not found in NVS");
         nvs_close(nvs_handle);
         return false;
     }
@@ -461,13 +461,13 @@ void WiFiManager::eventHandler(void* arg, esp_event_base_t event_base,
     
     if (event_base == WIFI_EVENT) {
         if (event_id == WIFI_EVENT_STA_START) {
-            ESP_LOGI(TAG, "WiFi station started");
+            ESP_LOGD(TAG, "WiFi station started");
         } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
-            ESP_LOGI(TAG, "WiFi disconnected");
+            ESP_LOGD(TAG, "WiFi disconnected");
             
             // Retry connection if we were connected before
             if (self->state_ == WiFiState::CONNECTED || self->state_ == WiFiState::CONNECTING) {
-                ESP_LOGI(TAG, "Trying to reconnect...");
+                ESP_LOGD(TAG, "Trying to reconnect...");
                 esp_wifi_connect();
                 self->updateState(WiFiState::CONNECTING);
             } else {
@@ -476,16 +476,16 @@ void WiFiManager::eventHandler(void* arg, esp_event_base_t event_base,
             }
         } else if (event_id == WIFI_EVENT_AP_STACONNECTED) {
             wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
-            ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d", 
+            ESP_LOGD(TAG, "Station "MACSTR" joined, AID=%d", 
                     MAC2STR(event->mac), event->aid);
         } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
             wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-            ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d", 
+            ESP_LOGD(TAG, "Station "MACSTR" left, AID=%d", 
                     MAC2STR(event->mac), event->aid);
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "WiFi connected with IP Address:" IPSTR, 
+        ESP_LOGD(TAG, "WiFi connected with IP Address:" IPSTR, 
                 IP2STR(&event->ip_info.ip));
         
         self->updateState(WiFiState::CONNECTED);
@@ -500,13 +500,13 @@ void WiFiManager::provisioningEventHandler(void* arg, esp_event_base_t event_bas
     if (event_base == WIFI_PROV_EVENT) {
         switch (event_id) {
             case WIFI_PROV_START:
-                ESP_LOGI(self->TAG, "Provisioning started");
+                ESP_LOGD(self->TAG, "Provisioning started");
                 break;
             case WIFI_PROV_CRED_RECV: {
                 wifi_sta_config_t* wifi_sta_cfg = (wifi_sta_config_t*)event_data;
-                ESP_LOGI(self->TAG, "Received WiFi credentials:");
-                ESP_LOGI(self->TAG, "SSID: %s", (const char*)wifi_sta_cfg->ssid);
-                ESP_LOGI(self->TAG, "Password: %s", (const char*)wifi_sta_cfg->password);
+                ESP_LOGD(self->TAG, "Received WiFi credentials:");
+                ESP_LOGD(self->TAG, "SSID: %s", (const char*)wifi_sta_cfg->ssid);
+                ESP_LOGD(self->TAG, "Password: %s", (const char*)wifi_sta_cfg->password);
                 
                 // Save credentials to NVS
                 self->saveCredentials((const char*)wifi_sta_cfg->ssid, 
@@ -519,11 +519,11 @@ void WiFiManager::provisioningEventHandler(void* arg, esp_event_base_t event_bas
                 break;
             }
             case WIFI_PROV_CRED_SUCCESS:
-                ESP_LOGI(self->TAG, "Provisioning successful");
+                ESP_LOGD(self->TAG, "Provisioning successful");
                 break;
             case WIFI_PROV_END:
                 {
-                ESP_LOGI(self->TAG, "Provisioning ended");
+                ESP_LOGD(self->TAG, "Provisioning ended");
                 
                 // Deinitialize provisioning
                 wifi_prov_mgr_deinit();
