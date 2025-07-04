@@ -216,13 +216,18 @@ bool WiFiManager::startProvisioning(const std::string& ap_ssid, const std::strin
         return true;
     }
     
+    // Clear stored credentials before starting provisioning
+    clearStoredCredentials();
+    
     // Clear event bits
     xEventGroupClearBits(wifi_event_group_, PROVISIONING_DONE);
     
     // Initialize provisioning manager with SoftAP scheme
     wifi_prov_mgr_config_t config = {
         .scheme = wifi_prov_scheme_softap,
-        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE,
+        .app_event_handler = {0},  // Initialize app event handler to zero
+        .wifi_prov_conn_cfg = {0}  // Initialize connection config to zero
     };
     
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
@@ -476,11 +481,11 @@ void WiFiManager::eventHandler(void* arg, esp_event_base_t event_base,
             }
         } else if (event_id == WIFI_EVENT_AP_STACONNECTED) {
             wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
-            ESP_LOGD(TAG, "Station "MACSTR" joined, AID=%d", 
+            ESP_LOGD(TAG, "Station " MACSTR " joined, AID=%d", 
                     MAC2STR(event->mac), event->aid);
         } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
             wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-            ESP_LOGD(TAG, "Station "MACSTR" left, AID=%d", 
+            ESP_LOGD(TAG, "Station " MACSTR " left, AID=%d", 
                     MAC2STR(event->mac), event->aid);
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
